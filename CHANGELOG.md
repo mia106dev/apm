@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Self-defined stdio MCP env placeholders now resolve from the install process environment for Claude Code and Codex, matching remote header handling. (#1963)
+
 ## [0.23.1] - 2026-06-29
 
 ### Fixed
