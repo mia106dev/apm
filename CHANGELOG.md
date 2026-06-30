@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `apm install --target intellij` now explains that `intellij` is a runtime
+  alias for the `copilot` target, and install docs no longer list it as a
+  target. (#1957)
+
 ## [0.23.1] - 2026-06-29
 
 ### Fixed
