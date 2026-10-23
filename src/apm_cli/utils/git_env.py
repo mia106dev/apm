@@ -490,6 +490,21 @@ def git_no_templates_args() -> tuple[str]:
     return ("--template=",)
 
 
+def git_no_autocrlf_args() -> tuple[str, str]:
+    """Return the canonical per-command pin against host CRLF conversion.
+
+    ``git_network_env`` freezes the parent process's effective config
+    (including a host ``core.autocrlf=true``) into ``GIT_CONFIG_KEY_n``
+    for the clone, while the SHA checkout that follows runs under the
+    isolated auth env without that snapshot. ``-c`` outranks both, so
+    the working-tree clone and its checkout agree on line endings and
+    the checkout no longer refuses LF-committed files the clone wrote
+    as CRLF. This pin does not override ``core.eol`` or
+    ``.gitattributes`` requests.
+    """
+    return "-c", "core.autocrlf=false"
+
+
 class _GitProgress(Protocol):
     """Git progress callback consumed by the clone subprocess adapter."""
 
@@ -1395,6 +1410,7 @@ def clone_git_worktree(
     args = [
         get_git_executable(),
         *git_no_hooks_args(),
+        *git_no_autocrlf_args(),
         "clone",
         *git_no_templates_args(),
     ]
@@ -1473,6 +1489,7 @@ def checkout_git_worktree(
         [
             get_git_executable(),
             *git_no_hooks_args(),
+            *git_no_autocrlf_args(),
             "-C",
             str(worktree),
             "checkout",

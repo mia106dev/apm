@@ -19,10 +19,12 @@ from apm_cli.utils.git_env import (
     GitUrlRewriteProbeError,
     _GitConfigSnapshot,
     _resolve_trusted_executable,
+    checkout_git_worktree,
     clone_git_worktree,
     get_gh_executable,
     get_git_executable,
     git_network_env,
+    git_no_autocrlf_args,
     git_remote_refs,
     git_subprocess_env,
     git_subprocess_error_text,
@@ -1606,3 +1608,35 @@ class TestGitSubprocessEnv:
             )
 
         assert token not in str(raised.value)
+
+
+class TestWorktreeAutocrlfPin:
+    """Fallback clone and SHA checkout must share one CRLF decision (apm#2971 follow-up)."""
+
+    def test_pin_is_a_per_command_autocrlf_false(self) -> None:
+        assert git_no_autocrlf_args() == ("-c", "core.autocrlf=false")
+
+    def test_clone_worktree_pins_autocrlf_false(self, tmp_path: Path) -> None:
+        with (
+            patch.dict(os.environ, {"PATH": os.environ["PATH"]}, clear=True),
+            patch(
+                "apm_cli.utils.git_env.subprocess.run",
+                side_effect=_run_real_git_config_and_fake_clone,
+            ) as run,
+        ):
+            clone_git_worktree("https://git.example.com/acme/repo", tmp_path / "clone")
+
+        clone_args = run.call_args_list[-1].args[0]
+        assert "clone" in clone_args
+        assert clone_args.index("core.autocrlf=false") < clone_args.index("clone")
+
+    def test_checkout_worktree_pins_autocrlf_false(self, tmp_path: Path) -> None:
+        with patch(
+            "apm_cli.utils.git_env.subprocess.run",
+            return_value=subprocess.CompletedProcess([], 0, stdout="", stderr=""),
+        ) as run:
+            checkout_git_worktree(tmp_path / "wt", "0123abcd")
+
+        checkout_args = run.call_args.args[0]
+        assert "checkout" in checkout_args
+        assert checkout_args.index("core.autocrlf=false") < checkout_args.index("checkout")
